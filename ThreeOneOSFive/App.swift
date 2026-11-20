@@ -182,8 +182,7 @@ struct ThreeOneOSFiveApp: App {
 }
 
 
-// Calculadora funcional: la secuencia exacta 1000990 abre la pantalla de keys.
-// Los ceros iniciales se conservan al introducirlos.
+// Calculadora independiente con controles al estilo iOS.
 private struct PantherCalculatorView: View {
     let onUnlock: () -> Void
     @State private var display = "0"
@@ -191,78 +190,206 @@ private struct PantherCalculatorView: View {
     @State private var lhs: Double?
     @State private var operation: String?
     @State private var freshEntry = true
+    @State private var lastOperation: String?
+    @State private var lastOperand: Double?
+    @State private var history: [CalculationRecord] = []
+    @State private var showHistory = false
+    @State private var showModes = false
+    @State private var showEditor = false
+    @State private var mode = "Básica"
 
+    private struct CalculationRecord: Identifiable {
+        let id = UUID()
+        let date = Date()
+        let expression: String
+        let result: String
+    }
     private let rows = [
-        ["AC", "+/-", "%", "÷"],
+        ["⌫", "AC", "%", "÷"],
         ["7", "8", "9", "×"],
         ["4", "5", "6", "−"],
         ["1", "2", "3", "+"],
-        ["0", ".", "⌫", "="]
+        ["+/−", "0", ".", "="]
     ]
 
     var body: some View {
         GeometryReader { geo in
-            VStack(spacing: 14) {
-                Text("Calculadora")
-                    .font(.system(size: 23, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(.top, 22)
-                Spacer()
-                Text(display)
-                    .font(.system(size: min(72, geo.size.width * 0.16), weight: .light, design: .rounded))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.4)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 20)
-                ForEach(rows.indices, id: \.self) { row in
-                    HStack(spacing: 12) {
-                        ForEach(rows[row], id: \.self) { key in
-                            Button { tap(key) } label: {
-                                Text(key)
-                                    .font(.system(size: 29, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: min(76, (geo.size.height - 210) / 5.6))
-                                    .background(buttonColor(key), in: RoundedRectangle(cornerRadius: 38))
+            let gap: CGFloat = 10
+            let diameter = min((geo.size.width - 32 - 3 * gap) / 4,
+                               max(48, (geo.size.height - 230) / 5.5))
+            ZStack(alignment: .top) {
+                Color.black.ignoresSafeArea()
+                VStack(spacing: 0) {
+                    HStack {
+                        Button { showHistory = true } label: {
+                            Image(systemName: "list.bullet")
+                                .font(.system(size: 22))
+                                .frame(width: 48, height: 48)
+                                .background(Color(white: 0.13), in: Circle())
+                        }
+                        Spacer()
+                        Button { showModes.toggle() } label: {
+                            Image(systemName: "calculator")
+                                .font(.system(size: 22))
+                                .frame(width: 48, height: 48)
+                                .background(Color(white: 0.13), in: Circle())
+                        }
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 14)
+                    Spacer(minLength: 12)
+                    Text(display)
+                        .font(.system(size: min(74, geo.size.width * 0.18), weight: .light))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.35)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.horizontal, 26)
+                        .padding(.bottom, 22)
+                        .foregroundStyle(.white)
+                        .contextMenu {
+                            Button("Pegar", systemImage: "doc.on.clipboard") {
+                                if let pasted = UIPasteboard.general.string,
+                                   !pasted.isEmpty {
+                                    display = pasted
+                                    entry = pasted
+                                    freshEntry = false
+                                }
                             }
-                            .buttonStyle(.plain)
+                            Button("Copiar", systemImage: "doc.on.doc") {
+                                UIPasteboard.general.string = display
+                            }
+                        }
+                    VStack(spacing: gap) {
+                        ForEach(rows.indices, id: \.self) { row in
+                            HStack(spacing: gap) {
+                                ForEach(rows[row], id: \.self) { key in
+                                    Button { tap(key) } label: {
+                                        Text(key)
+                                            .font(.system(size: diameter * 0.37, weight: .regular))
+                                            .foregroundStyle(.white)
+                                            .frame(width: diameter, height: diameter)
+                                            .background(buttonColor(key), in: Circle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 20)
+                }
+                if showModes {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(["Básica", "Científica", "Notas matemáticas", "Convertir"], id: \.self) { item in
+                            Button {
+                                mode = item
+                                showModes = false
+                            } label: {
+                                HStack(spacing: 16) {
+                                    Image(systemName: mode == item ? "checkmark" : " ")
+                                        .frame(width: 18)
+                                    Image(systemName: modeIcon(item))
+                                        .frame(width: 24)
+                                    Text(item)
+                                    Spacer()
+                                }
+                                .font(.system(size: 18))
+                                .foregroundStyle(.white)
+                                .frame(height: 54)
+                            }
+                            if item == "Notas matemáticas" {
+                                Divider().overlay(Color.white.opacity(0.12)).padding(.vertical, 5)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(Color(white: 0.09), in: RoundedRectangle(cornerRadius: 28))
+                    .padding(.leading, 100)
+                    .padding(.trailing, 18)
+                    .padding(.top, 14)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+        .sheet(isPresented: $showHistory) {
+            NavigationStack {
+                List {
+                    ForEach(groupedDays, id: \.self) { day in
+                        Section(day) {
+                            ForEach(history.filter { dayLabel($0.date) == day }) { record in
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(record.expression).foregroundStyle(.secondary)
+                                    Text(record.result).font(.title3)
+                                }
+                                .padding(.vertical, 12)
+                            }
+                            .onDelete { offsets in
+                                let subset = history.filter { dayLabel($0.date) == day }
+                                let ids = Set(offsets.map { subset[$0].id })
+                                history.removeAll { ids.contains($0.id) }
+                            }
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                Spacer().frame(height: 12)
+                .navigationTitle("Historial")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(showEditor ? "Listo" : "Editar") { showEditor.toggle() }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { showHistory = false } label: {
+                            Image(systemName: "xmark")
+                        }
+                    }
+                }
+                .environment(\.editMode, .constant(showEditor ? .active : .inactive))
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.black.ignoresSafeArea())
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
-        .preferredColorScheme(.dark)
     }
 
+    private var groupedDays: [String] {
+        var result: [String] = []
+        for item in history {
+            let label = dayLabel(item.date)
+            if !result.contains(label) { result.append(label) }
+        }
+        return result
+    }
+    private func dayLabel(_ date: Date) -> String {
+        if Calendar.current.isDateInToday(date) { return "Hoy" }
+        if Calendar.current.isDateInYesterday(date) { return "Ayer" }
+        return date.formatted(date: .abbreviated, time: .omitted)
+    }
+    private func modeIcon(_ value: String) -> String {
+        switch value {
+        case "Científica": return "function"
+        case "Notas matemáticas": return "pencil.and.outline"
+        case "Convertir": return "arrow.left.arrow.right"
+        default: return "plus.forwardslash.minus"
+        }
+    }
     private func buttonColor(_ key: String) -> Color {
         if ["÷", "×", "−", "+", "="].contains(key) { return Color(red: 1, green: 0.58, blue: 0.05) }
-        if ["AC", "+/-", "%"].contains(key) { return Color(white: 0.38) }
-        return Color(white: 0.18)
+        if ["⌫", "AC", "%"].contains(key) { return Color(white: 0.38) }
+        return Color(white: 0.19)
     }
-
     private func tap(_ key: String) {
         if key.count == 1, let digit = key.first, digit.isNumber {
-            if freshEntry {
-                entry = ""
-                freshEntry = false
-            }
+            if freshEntry { entry = ""; freshEntry = false }
             if entry.count >= 16 { return }
-            entry += key
+            entry = entry == "0" ? key : entry + key
             display = entry
-            if entry == "1000990" {
-                onUnlock()
-            }
             return
         }
         switch key {
         case "AC":
-            display = "0"; entry = ""; lhs = nil; operation = nil; freshEntry = true
+            display = "0"; entry = ""; lhs = nil; operation = nil
+            lastOperation = nil; lastOperand = nil; freshEntry = true
         case "⌫":
             if !freshEntry {
                 entry = String(entry.dropLast())
@@ -271,41 +398,59 @@ private struct PantherCalculatorView: View {
         case ".":
             if freshEntry { entry = "0"; freshEntry = false }
             if !entry.contains(".") { entry += "."; display = entry }
-        case "+/-":
+        case "+/−":
             if let value = Double(display) {
                 display = format(-value); entry = display; freshEntry = false
             }
         case "%":
             if let value = Double(display) {
-                display = format(value / 100); entry = display; freshEntry = false
+                let base = lhs ?? 0
+                let result = (operation == "+" || operation == "−") ? base * value / 100 : value / 100
+                display = format(result); entry = display; freshEntry = false
             }
         case "+", "−", "×", "÷":
+            if let old = operation, let left = lhs, !freshEntry, let right = Double(display) {
+                let value = evaluate(left, right, old)
+                guard value.isFinite else { display = "Error"; return }
+                display = format(value)
+            }
             lhs = Double(display)
             operation = key
             freshEntry = true
         case "=":
-            guard let left = lhs, let right = Double(display), let operation else { return }
-            var result: Double
-            switch operation {
-            case "+": result = left + right
-            case "−": result = left - right
-            case "×": result = left * right
-            default: result = left / right
+            if let left = lhs, let op = operation, let right = Double(display) {
+                finish(left, right, op)
+            } else if let op = lastOperation, let right = lastOperand, let left = Double(display) {
+                finish(left, right, op)
             }
-            display = result.isFinite ? format(result) : "Error"
-            entry = display
-            lhs = nil
-            self.operation = nil
-            freshEntry = true
         default: break
         }
     }
-
-    private func format(_ value: Double) -> String {
-        if value.isFinite && value.rounded() == value && abs(value) < 1e15 {
-            return String(Int64(value))
+    private func evaluate(_ left: Double, _ right: Double, _ op: String) -> Double {
+        switch op {
+        case "+": return left + right
+        case "−": return left - right
+        case "×": return left * right
+        default: return right == 0 ? .nan : left / right
         }
-        return String(format: "%.9g", value)
+    }
+    private func finish(_ left: Double, _ right: Double, _ op: String) {
+        let value = evaluate(left, right, op)
+        let result = value.isFinite ? format(value) : "Error"
+        history.insert(CalculationRecord(expression: "\(format(left))\(op)\(format(right))",
+                                         result: result), at: 0)
+        display = result
+        entry = result
+        lhs = nil
+        operation = nil
+        lastOperation = op
+        lastOperand = right
+        freshEntry = true
+    }
+    private func format(_ value: Double) -> String {
+        guard value.isFinite else { return "Error" }
+        if value.rounded() == value && abs(value) < 1e15 { return String(Int64(value)) }
+        return String(format: "%.10g", value)
     }
 }
 
