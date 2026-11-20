@@ -228,6 +228,12 @@ private struct PantherCalculatorView: View {
                                 .background(Color(white: 0.13), in: Circle())
                         }
                         Spacer()
+                        Button("Acceder con key") { onUnlock() }
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.75))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(Color(white: 0.13), in: Capsule())
                         Button { showModes.toggle() } label: {
                             Image(systemName: "calculator")
                                 .font(.system(size: 22))
@@ -239,7 +245,7 @@ private struct PantherCalculatorView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
                     Spacer(minLength: 12)
-                    Text(display)
+                    Text(visibleExpression)
                         .font(.system(size: min(74, geo.size.width * 0.18), weight: .light))
                         .lineLimit(1)
                         .minimumScaleFactor(0.35)
@@ -352,6 +358,11 @@ private struct PantherCalculatorView: View {
         }
     }
 
+    private var visibleExpression: String {
+        guard let left = lhs, let op = operation else { return display }
+        return "\(format(left)) \(op) \(freshEntry ? "" : display)"
+    }
+
     private var groupedDays: [String] {
         var result: [String] = []
         for item in history {
@@ -418,6 +429,8 @@ private struct PantherCalculatorView: View {
             operation = key
             freshEntry = true
         case "=":
+            // "=" resuelve únicamente operaciones matemáticas.
+            // El acceso por licencia utiliza el control visible "Acceder con key".
             if let left = lhs, let op = operation, let right = Double(display) {
                 finish(left, right, op)
             } else if let op = lastOperation, let right = lastOperand, let left = Double(display) {
