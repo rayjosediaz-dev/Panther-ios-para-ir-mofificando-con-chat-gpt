@@ -236,9 +236,11 @@ private struct PantherCalculatorView: View {
                             .background(Color(white: 0.13), in: Capsule())
                         Button { showModes.toggle() } label: {
                             Image(systemName: "calculator")
-                                .font(.system(size: 22))
-                                .frame(width: 48, height: 48)
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundStyle(.white)
+                                .frame(width: 30, height: 30)
                                 .background(Color(white: 0.13), in: Circle())
+                                .frame(width: 48, height: 48, alignment: .center)
                         }
                     }
                     .foregroundStyle(.white)
