@@ -258,7 +258,7 @@ private struct PantherCalculatorView: View {
                     .padding(.top, 14)
                     Spacer(minLength: 12)
                     Text(visibleExpression)
-                        .font(.system(size: min(74, geo.size.width * 0.18), weight: .light))
+                        .font(.system(size: min(88, geo.size.width * 0.22), weight: .light))
                         .lineLimit(1)
                         .minimumScaleFactor(0.35)
                         .frame(maxWidth: .infinity, alignment: .trailing)
@@ -318,7 +318,7 @@ private struct PantherCalculatorView: View {
                                         }
                                     } label: {
                                         Text(key == "=" && isLicenseInput ? (session.isLoading ? "…" : "Validar") : key)
-                                            .font(.system(size: diameter * (key == "=" && isLicenseInput ? 0.20 : 0.37), weight: .regular))
+                                            .font(.system(size: diameter * (key == "=" && isLicenseInput ? 0.20 : (key.count == 1 && key.first?.isNumber == true ? 0.46 : 0.37)), weight: .regular))
                                             .foregroundStyle(.white)
                                             .frame(width: diameter, height: diameter)
                                             .background(buttonColor(key), in: Circle())
