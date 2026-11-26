@@ -186,8 +186,6 @@ struct ThreeOneOSFiveApp: App {
 private struct PantherCalculatorView: View {
     let onUnlock: () -> Void
     @EnvironmentObject private var session: PantherSession
-    @State private var licenseKey = ""
-    @State private var showLicenseVerification = false
     @State private var showClipboardMenu = false
     @State private var display = "0"
     @State private var entry = ""
@@ -303,13 +301,17 @@ private struct PantherCalculatorView: View {
                         .zIndex(1)
                     if !display.isEmpty && Double(display) == nil && lhs == nil {
                         Button {
-                            licenseKey = display
-                            showLicenseVerification = true
+                            let pastedKey = display
+                            Task {
+                                await session.activate(key: pastedKey)
+                                if session.role != nil && session.errorMessage == nil { onUnlock() }
+                            }
                         } label: {
-                            Label("Verificar licencia", systemImage: "key")
+                            Label(session.isLoading ? "Verificando…" : "Verificar licencia", systemImage: "key")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(.white)
                         }
+                        .disabled(session.isLoading)
                         .padding(.bottom, 12)
                     }
                     VStack(spacing: gap) {
@@ -365,19 +367,6 @@ private struct PantherCalculatorView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .alert("Verificar licencia", isPresented: $showLicenseVerification) {
-            SecureField("Pegar key", text: $licenseKey)
-            Button("Verificar") {
-                Task {
-                    await session.activate(key: licenseKey)
-                    licenseKey = ""
-                    if session.role != nil { onUnlock() }
-                }
-            }
-            Button("Cancelar", role: .cancel) { licenseKey = "" }
-        } message: {
-            Text("Introduce tu licencia para verificar el acceso.")
-        }
         .sheet(isPresented: $showHistory, onDismiss: { showEditor = false }) {
             VStack(spacing: 0) {
                 HStack {
