@@ -232,23 +232,12 @@ private struct PantherCalculatorView: View {
                         }
                         Spacer()
                         Button { showModes.toggle() } label: {
-                            VStack(spacing: 2) {
-                                RoundedRectangle(cornerRadius: 1)
-                                    .fill(Color.white)
-                                    .frame(width: 10, height: 3)
-                                ForEach(0..<3) { _ in
-                                    HStack(spacing: 2) {
-                                        ForEach(0..<3) { _ in
-                                            Circle().fill(Color.white).frame(width: 2, height: 2)
-                                        }
-                                    }
-                                }
-                            }
-                            .padding(3)
-                            .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.white, lineWidth: 1))
-                            .accessibilityLabel("Modos de calculadora")
+                            Image(systemName: "calculator")
+                                .font(.system(size: 25, weight: .semibold))
                                 .frame(width: 48, height: 48)
-                                .background(Color(white: 0.13), in: Circle())
+                                .background(Color(white: 0.10), in: Circle())
+                                .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
+                                .accessibilityLabel("Modos de calculadora")
                         }
                     }
                     .foregroundStyle(.white)
@@ -267,19 +256,26 @@ private struct PantherCalculatorView: View {
                             Button("Pegar", systemImage: "doc.on.clipboard") {
                                 if let pasted = UIPasteboard.general.string,
                                    !pasted.isEmpty {
+                                    lhs = nil
+                                    operation = nil
                                     display = pasted
                                     entry = pasted
                                     freshEntry = false
                                 }
                             }
-                            Button("Verificar licencia", systemImage: "key") {
-                                licenseKey = ""
-                                showLicenseVerification = true
-                            }
                             Button("Copiar", systemImage: "doc.on.doc") {
                                 UIPasteboard.general.string = display
                             }
                         }
+                    Button {
+                        licenseKey = Double(display) == nil ? display : ""
+                        showLicenseVerification = true
+                    } label: {
+                        Label("Verificar licencia", systemImage: "key")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.bottom, 12)
                     VStack(spacing: gap) {
                         ForEach(rows.indices, id: \.self) { row in
                             HStack(spacing: gap) {
