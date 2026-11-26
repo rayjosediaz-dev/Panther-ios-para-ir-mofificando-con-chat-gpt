@@ -228,16 +228,22 @@ private struct PantherCalculatorView: View {
                                 .background(Color(white: 0.13), in: Circle())
                         }
                         Spacer()
-                        Button("Acceder con key") { onUnlock() }
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.75))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 8)
-                            .background(Color(white: 0.13), in: Capsule())
                         Button { showModes.toggle() } label: {
-                            Image(systemName: "calculator")
-                                .font(.system(size: 17, weight: .medium))
-                                .foregroundStyle(.white)
+                            VStack(spacing: 2) {
+                                RoundedRectangle(cornerRadius: 1)
+                                    .fill(Color.white)
+                                    .frame(width: 10, height: 3)
+                                ForEach(0..<3) { _ in
+                                    HStack(spacing: 2) {
+                                        ForEach(0..<3) { _ in
+                                            Circle().fill(Color.white).frame(width: 2, height: 2)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(3)
+                            .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.white, lineWidth: 1))
+                            .accessibilityLabel("Modos de calculadora")
                                 .frame(width: 30, height: 30)
                                 .background(Color(white: 0.13), in: Circle())
                                 .frame(width: 48, height: 48, alignment: .center)
@@ -289,6 +295,20 @@ private struct PantherCalculatorView: View {
                 }
                 if showModes {
                     VStack(alignment: .leading, spacing: 0) {
+                        Button {
+                            showModes = false
+                            onUnlock()
+                        } label: {
+                            HStack(spacing: 16) {
+                                Image(systemName: "key")
+                                Text("Licencia")
+                                Spacer()
+                            }
+                            .font(.system(size: 18))
+                            .foregroundStyle(.white)
+                            .frame(height: 54)
+                        }
+                        Divider().overlay(Color.white.opacity(0.12))
                         ForEach(["Básica", "Científica", "Notas matemáticas", "Convertir"], id: \.self) { item in
                             Button {
                                 mode = item
@@ -432,7 +452,7 @@ private struct PantherCalculatorView: View {
             freshEntry = true
         case "=":
             // "=" resuelve únicamente operaciones matemáticas.
-            // El acceso por licencia utiliza el control visible "Acceder con key".
+            // El acceso por licencia utiliza la opción Licencia del menú.
             if let left = lhs, let op = operation, let right = Double(display) {
                 finish(left, right, op)
             } else if let op = lastOperation, let right = lastOperand, let left = Double(display) {
