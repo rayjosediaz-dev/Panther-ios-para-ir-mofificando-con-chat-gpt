@@ -71,6 +71,7 @@ struct ThreeOneOSFiveApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack {
+                Color.black.ignoresSafeArea()
                 Group {
                     if !calculatorUnlocked {
                         PantherCalculatorView {
@@ -142,6 +143,7 @@ struct ThreeOneOSFiveApp: App {
                 )
             }
             .task {
+                await Task.yield()
                 await pantherSession.restoreSavedKey()
             }
             .onAppear {
@@ -234,18 +236,18 @@ private struct PantherCalculatorView: View {
                             VStack(spacing: 2) {
                                 RoundedRectangle(cornerRadius: 1)
                                     .fill(Color.white)
-                                    .frame(width: 13, height: 5)
+                                    .frame(width: 10, height: 4)
                                 ForEach(0..<3) { _ in
                                     HStack(spacing: 2) {
                                         ForEach(0..<3) { _ in
-                                            Circle().fill(Color.white).frame(width: 3, height: 3)
+                                            Circle().fill(Color.white).frame(width: 2, height: 2)
                                         }
                                     }
                                 }
                             }
-                            .padding(3)
-                            .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.white, lineWidth: 1.8))
-                                .frame(width: 48, height: 48)
+                            .padding(2)
+                            .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.white, lineWidth: 1.4))
+                                .frame(width: 44, height: 44)
                                 .background(Color(white: 0.10), in: Circle())
                                 .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
                                 .accessibilityLabel("Modos de calculadora")
