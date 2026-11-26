@@ -187,6 +187,7 @@ private struct PantherCalculatorView: View {
     let onUnlock: () -> Void
     @EnvironmentObject private var session: PantherSession
     @State private var licenseKey = ""
+    @State private var showLicenseVerification = false
     @State private var display = "0"
     @State private var entry = ""
     @State private var lhs: Double?
@@ -254,31 +255,6 @@ private struct PantherCalculatorView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
                     Spacer(minLength: 12)
-                    VStack(alignment: .trailing, spacing: 8) {
-                        SecureField("Pegar key de licencia", text: $licenseKey)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .multilineTextAlignment(.trailing)
-                            .foregroundStyle(.white)
-                        Button(session.isLoading ? "Verificando..." : "Verificar key") {
-                            Task {
-                                await session.activate(key: licenseKey)
-                                if session.role != nil {
-                                    licenseKey = ""
-                                    onUnlock()
-                                }
-                            }
-                        }
-                        .disabled(session.isLoading || licenseKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        .foregroundStyle(.white)
-                        if let error = session.errorMessage {
-                            Text(error).font(.caption).foregroundStyle(.red)
-                        }
-                    }
-                    .padding(12)
-                    .background(Color(white: 0.13), in: RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal, 26)
-                    .padding(.bottom, 8)
                     Text(visibleExpression)
                         .font(.system(size: min(74, geo.size.width * 0.18), weight: .light))
                         .lineLimit(1)
@@ -295,6 +271,10 @@ private struct PantherCalculatorView: View {
                                     entry = pasted
                                     freshEntry = false
                                 }
+                            }
+                            Button("Verificar licencia", systemImage: "key") {
+                                licenseKey = ""
+                                showLicenseVerification = true
                             }
                             Button("Copiar", systemImage: "doc.on.doc") {
                                 UIPasteboard.general.string = display
@@ -353,6 +333,19 @@ private struct PantherCalculatorView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .alert("Verificar licencia", isPresented: $showLicenseVerification) {
+            SecureField("Pegar key", text: $licenseKey)
+            Button("Verificar") {
+                Task {
+                    await session.activate(key: licenseKey)
+                    licenseKey = ""
+                    if session.role != nil { onUnlock() }
+                }
+            }
+            Button("Cancelar", role: .cancel) { licenseKey = "" }
+        } message: {
+            Text("Introduce tu licencia para verificar el acceso.")
+        }
         .sheet(isPresented: $showHistory, onDismiss: { showEditor = false }) {
             VStack(spacing: 0) {
                 HStack {
