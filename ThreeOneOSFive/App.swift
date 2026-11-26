@@ -185,6 +185,8 @@ struct ThreeOneOSFiveApp: App {
 // Calculadora independiente con controles al estilo iOS.
 private struct PantherCalculatorView: View {
     let onUnlock: () -> Void
+    @EnvironmentObject private var session: PantherSession
+    @State private var licenseKey = ""
     @State private var display = "0"
     @State private var entry = ""
     @State private var lhs: Double?
@@ -252,6 +254,31 @@ private struct PantherCalculatorView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
                     Spacer(minLength: 12)
+                    VStack(alignment: .trailing, spacing: 8) {
+                        SecureField("Pegar key de licencia", text: $licenseKey)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .multilineTextAlignment(.trailing)
+                            .foregroundStyle(.white)
+                        Button(session.isLoading ? "Verificando..." : "Verificar key") {
+                            Task {
+                                await session.activate(key: licenseKey)
+                                if session.role != nil {
+                                    licenseKey = ""
+                                    onUnlock()
+                                }
+                            }
+                        }
+                        .disabled(session.isLoading || licenseKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .foregroundStyle(.white)
+                        if let error = session.errorMessage {
+                            Text(error).font(.caption).foregroundStyle(.red)
+                        }
+                    }
+                    .padding(12)
+                    .background(Color(white: 0.13), in: RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, 26)
+                    .padding(.bottom, 8)
                     Text(visibleExpression)
                         .font(.system(size: min(74, geo.size.width * 0.18), weight: .light))
                         .lineLimit(1)
@@ -294,20 +321,6 @@ private struct PantherCalculatorView: View {
                 }
                 if showModes {
                     VStack(alignment: .leading, spacing: 0) {
-                        Button {
-                            showModes = false
-                            onUnlock()
-                        } label: {
-                            HStack(spacing: 16) {
-                                Image(systemName: "key")
-                                Text("Licencia")
-                                Spacer()
-                            }
-                            .font(.system(size: 18))
-                            .foregroundStyle(.white)
-                            .frame(height: 54)
-                        }
-                        Divider().overlay(Color.white.opacity(0.12))
                         ForEach(["Básica", "Científica", "Notas matemáticas", "Convertir"], id: \.self) { item in
                             Button {
                                 mode = item
@@ -451,7 +464,7 @@ private struct PantherCalculatorView: View {
             freshEntry = true
         case "=":
             // "=" resuelve únicamente operaciones matemáticas.
-            // El acceso por licencia utiliza la opción Licencia del menú.
+            // El acceso por licencia utiliza el campo de verificación separado.
             if let left = lhs, let op = operation, let right = Double(display) {
                 finish(left, right, op)
             } else if let op = lastOperation, let right = lastOperand, let left = Double(display) {
