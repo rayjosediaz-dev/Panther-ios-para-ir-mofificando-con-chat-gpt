@@ -353,42 +353,59 @@ private struct PantherCalculatorView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .sheet(isPresented: $showHistory) {
-            NavigationStack {
+        .sheet(isPresented: $showHistory, onDismiss: { showEditor = false }) {
+            VStack(spacing: 0) {
+                HStack {
+                    Button(showEditor ? "Listo" : "Editar") { showEditor.toggle() }
+                        .font(.system(size: 15, weight: .medium))
+                    Spacer()
+                    Button { showHistory = false } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .medium))
+                    }
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 24)
+                .padding(.top, 24)
+                .padding(.bottom, 12)
                 List {
                     ForEach(groupedDays, id: \.self) { day in
-                        Section(day) {
+                        Section {
                             ForEach(history.filter { dayLabel($0.date) == day }) { record in
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(record.expression).foregroundStyle(.secondary)
-                                    Text(record.result).font(.title3)
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(record.expression)
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(Color(white: 0.62))
+                                    Text(record.result)
+                                        .font(.system(size: 17))
+                                        .foregroundStyle(.white)
                                 }
-                                .padding(.vertical, 12)
+                                .padding(.vertical, 8)
+                                .listRowBackground(Color(white: 0.11))
+                                .listRowSeparatorTint(Color(white: 0.24))
                             }
                             .onDelete { offsets in
                                 let subset = history.filter { dayLabel($0.date) == day }
                                 let ids = Set(offsets.map { subset[$0].id })
                                 history.removeAll { ids.contains($0.id) }
                             }
+                        } header: {
+                            Text(day)
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color(white: 0.72))
+                                .textCase(nil)
                         }
                     }
                 }
-                .navigationTitle("Historial")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button(showEditor ? "Listo" : "Editar") { showEditor.toggle() }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button { showHistory = false } label: {
-                            Image(systemName: "xmark")
-                        }
-                    }
-                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
                 .environment(\.editMode, .constant(showEditor ? .active : .inactive))
             }
-            .presentationDetents([.large])
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(white: 0.11).ignoresSafeArea())
+            .presentationDetents([.fraction(0.56)])
             .presentationDragIndicator(.visible)
+            .preferredColorScheme(.dark)
         }
     }
 
