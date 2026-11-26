@@ -244,9 +244,8 @@ private struct PantherCalculatorView: View {
                             .padding(3)
                             .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.white, lineWidth: 1))
                             .accessibilityLabel("Modos de calculadora")
-                                .frame(width: 30, height: 30)
+                                .frame(width: 48, height: 48)
                                 .background(Color(white: 0.13), in: Circle())
-                                .frame(width: 48, height: 48, alignment: .center)
                         }
                     }
                     .foregroundStyle(.white)
