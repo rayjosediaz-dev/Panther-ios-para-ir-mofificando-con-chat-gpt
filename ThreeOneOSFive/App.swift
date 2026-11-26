@@ -218,8 +218,8 @@ private struct PantherCalculatorView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let gap: CGFloat = 10
-            let diameter = min((geo.size.width - 32 - 3 * gap) / 4,
+            let gap: CGFloat = geo.size.width * 0.022
+            let diameter = min((geo.size.width - geo.size.width * 0.075 - 3 * gap) / 4,
                                max(48, (geo.size.height - 230) / 5.5))
             ZStack(alignment: .top) {
                 Color.black.ignoresSafeArea()
@@ -258,12 +258,12 @@ private struct PantherCalculatorView: View {
                     .padding(.top, 14)
                     Spacer(minLength: 12)
                     Text(visibleExpression)
-                        .font(.system(size: min(88, geo.size.width * 0.22), weight: .light))
+                        .font(.system(size: min(76, geo.size.width * 0.17), weight: .light))
                         .lineLimit(1)
                         .minimumScaleFactor(0.35)
                         .frame(maxWidth: .infinity, alignment: .trailing)
                         .padding(.horizontal, 26)
-                        .padding(.bottom, 22)
+                        .padding(.bottom, 14)
                         .foregroundStyle(.white)
                         .contentShape(Rectangle())
                         .onLongPressGesture { showClipboardMenu.toggle() }
@@ -318,7 +318,7 @@ private struct PantherCalculatorView: View {
                                         }
                                     } label: {
                                         Text(key == "=" && isLicenseInput ? (session.isLoading ? "…" : "Validar") : key)
-                                            .font(.system(size: diameter * (key == "=" && isLicenseInput ? 0.20 : (key.count == 1 && key.first?.isNumber == true ? 0.46 : 0.37)), weight: .regular))
+                                            .font(.system(size: diameter * (key == "=" && isLicenseInput ? 0.20 : 0.44), weight: .regular))
                                             .foregroundStyle(.white)
                                             .frame(width: diameter, height: diameter)
                                             .background(buttonColor(key), in: Circle())
@@ -329,7 +329,7 @@ private struct PantherCalculatorView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 12)
                 }
                 if showModes {
                     VStack(alignment: .leading, spacing: 0) {
@@ -346,9 +346,9 @@ private struct PantherCalculatorView: View {
                                     Text(item)
                                     Spacer()
                                 }
-                                .font(.system(size: 18))
+                                .font(.system(size: geo.size.width * 0.039))
                                 .foregroundStyle(.white)
-                                .frame(height: 54)
+                                .frame(height: geo.size.width * 0.105)
                             }
                             if item == "Notas matemáticas" {
                                 Divider().overlay(Color.white.opacity(0.12)).padding(.vertical, 5)
@@ -358,7 +358,7 @@ private struct PantherCalculatorView: View {
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
                     .background(Color(white: 0.09), in: RoundedRectangle(cornerRadius: 28))
-                    .padding(.leading, 100)
+                    .padding(.leading, geo.size.width * 0.34)
                     .padding(.trailing, 18)
                     .padding(.top, 14)
                 }
