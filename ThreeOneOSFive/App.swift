@@ -188,6 +188,7 @@ private struct PantherCalculatorView: View {
     @EnvironmentObject private var session: PantherSession
     @State private var licenseKey = ""
     @State private var showLicenseVerification = false
+    @State private var showClipboardMenu = false
     @State private var display = "0"
     @State private var entry = ""
     @State private var lhs: Double?
@@ -252,21 +253,42 @@ private struct PantherCalculatorView: View {
                         .padding(.horizontal, 26)
                         .padding(.bottom, 22)
                         .foregroundStyle(.white)
-                        .contextMenu {
-                            Button("Pegar", systemImage: "doc.on.clipboard") {
-                                if let pasted = UIPasteboard.general.string,
-                                   !pasted.isEmpty {
-                                    lhs = nil
-                                    operation = nil
-                                    display = pasted
-                                    entry = pasted
-                                    freshEntry = false
+                        .contentShape(Rectangle())
+                        .onLongPressGesture { showClipboardMenu.toggle() }
+                        .overlay(alignment: .topTrailing) {
+                            if showClipboardMenu {
+                                HStack(spacing: 0) {
+                                    Button("Copiar") {
+                                        UIPasteboard.general.string = display
+                                        showClipboardMenu = false
+                                    }
+                                    .padding(.horizontal, 14)
+                                    Rectangle()
+                                        .fill(Color.white.opacity(0.12))
+                                        .frame(width: 1, height: 16)
+                                    Button("Pegar") {
+                                        if let pasted = UIPasteboard.general.string, !pasted.isEmpty {
+                                            lhs = nil
+                                            operation = nil
+                                            display = pasted
+                                            entry = pasted
+                                            freshEntry = false
+                                        }
+                                        showClipboardMenu = false
+                                    }
+                                    .padding(.horizontal, 14)
                                 }
-                            }
-                            Button("Copiar", systemImage: "doc.on.doc") {
-                                UIPasteboard.general.string = display
+                                .font(.system(size: 13))
+                                .foregroundStyle(.white)
+                                .buttonStyle(.plain)
+                                .frame(height: 38)
+                                .background(Color(white: 0.12), in: Capsule())
+                                .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1))
+                                .padding(.trailing, 18)
+                                .offset(y: -44)
                             }
                         }
+                        .zIndex(1)
                     Button {
                         licenseKey = Double(display) == nil ? display : ""
                         showLicenseVerification = true
@@ -430,6 +452,7 @@ private struct PantherCalculatorView: View {
         return Color(white: 0.19)
     }
     private func tap(_ key: String) {
+        showClipboardMenu = false
         if key.count == 1, let digit = key.first, digit.isNumber {
             if freshEntry { entry = ""; freshEntry = false }
             if entry.count >= 16 { return }
