@@ -299,28 +299,24 @@ private struct PantherCalculatorView: View {
                             }
                         }
                         .zIndex(1)
-                    if !display.isEmpty && Double(display) == nil && lhs == nil {
-                        Button {
-                            let pastedKey = display
-                            Task {
-                                await session.activate(key: pastedKey)
-                                if session.role != nil && session.errorMessage == nil { onUnlock() }
-                            }
-                        } label: {
-                            Label(session.isLoading ? "Verificando…" : "Verificar licencia", systemImage: "key")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(.white)
-                        }
-                        .disabled(session.isLoading)
-                        .padding(.bottom, 12)
-                    }
                     VStack(spacing: gap) {
                         ForEach(rows.indices, id: \.self) { row in
                             HStack(spacing: gap) {
                                 ForEach(rows[row], id: \.self) { key in
-                                    Button { tap(key) } label: {
-                                        Text(key)
-                                            .font(.system(size: diameter * 0.37, weight: .regular))
+                                    Button {
+                                        if key == "=" && isLicenseInput {
+                                            guard !session.isLoading else { return }
+                                            let pastedKey = display
+                                            Task {
+                                                await session.activate(key: pastedKey)
+                                                if session.role != nil && session.errorMessage == nil { onUnlock() }
+                                            }
+                                        } else {
+                                            tap(key)
+                                        }
+                                    } label: {
+                                        Text(key == "=" && isLicenseInput ? (session.isLoading ? "…" : "Validar") : key)
+                                            .font(.system(size: diameter * (key == "=" && isLicenseInput ? 0.20 : 0.37), weight: .regular))
                                             .foregroundStyle(.white)
                                             .frame(width: diameter, height: diameter)
                                             .background(buttonColor(key), in: Circle())
@@ -421,6 +417,10 @@ private struct PantherCalculatorView: View {
             .presentationDragIndicator(.visible)
             .preferredColorScheme(.dark)
         }
+    }
+
+    private var isLicenseInput: Bool {
+        !display.isEmpty && Double(display) == nil && lhs == nil && display.lowercased().hasPrefix("panther-y")
     }
 
     private var visibleExpression: String {
