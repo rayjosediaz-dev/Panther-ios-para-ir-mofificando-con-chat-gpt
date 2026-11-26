@@ -233,8 +233,20 @@ private struct PantherCalculatorView: View {
                         }
                         Spacer()
                         Button { showModes.toggle() } label: {
-                            Image(systemName: "calculator")
-                                .font(.system(size: 25, weight: .semibold))
+                            VStack(spacing: 2) {
+                                RoundedRectangle(cornerRadius: 1)
+                                    .fill(Color.white)
+                                    .frame(width: 13, height: 5)
+                                ForEach(0..<3) { _ in
+                                    HStack(spacing: 2) {
+                                        ForEach(0..<3) { _ in
+                                            Circle().fill(Color.white).frame(width: 3, height: 3)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(3)
+                            .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.white, lineWidth: 1.8))
                                 .frame(width: 48, height: 48)
                                 .background(Color(white: 0.10), in: Circle())
                                 .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 1))
