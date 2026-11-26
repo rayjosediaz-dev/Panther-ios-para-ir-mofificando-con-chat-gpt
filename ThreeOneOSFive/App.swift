@@ -301,15 +301,17 @@ private struct PantherCalculatorView: View {
                             }
                         }
                         .zIndex(1)
-                    Button {
-                        licenseKey = Double(display) == nil ? display : ""
-                        showLicenseVerification = true
-                    } label: {
-                        Label("Verificar licencia", systemImage: "key")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.white)
+                    if !display.isEmpty && Double(display) == nil && lhs == nil {
+                        Button {
+                            licenseKey = display
+                            showLicenseVerification = true
+                        } label: {
+                            Label("Verificar licencia", systemImage: "key")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(.white)
+                        }
+                        .padding(.bottom, 12)
                     }
-                    .padding(.bottom, 12)
                     VStack(spacing: gap) {
                         ForEach(rows.indices, id: \.self) { row in
                             HStack(spacing: gap) {
