@@ -1175,8 +1175,79 @@ private struct PantherAssignedPatchesView: View {
     @ObservedObject var session: PantherSession
 
     var body: some View {
-        PatchProjectsView(ghostTheme: true)
-            .background(Color.black.ignoresSafeArea())
-            .statusBarHidden(true)
+        TabView {
+            PatchProjectsView(ghostTheme: true)
+                .tabItem { Label("Patches", systemImage: "shippingbox") }
+            PantherPublicProfileView()
+                .tabItem { Label("Home", systemImage: "house.fill") }
+        }
+        .preferredColorScheme(.dark)
+        .background(Color.black.ignoresSafeArea())
+        .statusBarHidden(true)
+    }
+}
+
+private struct PantherPublicProfileView: View {
+    @State private var uid = ""
+    @State private var demo = false
+    @State private var message = ""
+    @State private var profile: Profile?
+    @State private var loading = false
+
+    private struct Profile: Decodable {
+        let nickname: String
+        let level: Int?
+        let likes: Int?
+        let rankBR: String?
+        let rankDE: String?
+        let clan: String?
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Perfil Free Fire") {
+                    TextField("UID del jugador", text: $uid)
+                        .keyboardType(.numberPad)
+                    Toggle("Modo de demostración", isOn: $demo)
+                        .onChange(of: demo) { _ in profile = nil; message = "" }
+                    Button(loading ? "Consultando…" : "Buscar perfil") {
+                        Task { await lookup() }
+                    }
+                    .disabled(loading)
+                    if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
+                }
+                if let profile {
+                    Section(demo ? "Ejemplo ficticio" : "Perfil público") {
+                        LabeledContent("Nombre", value: profile.nickname)
+                        LabeledContent("Nivel", value: profile.level.map { String($0) } ?? "No disponible")
+                        LabeledContent("Likes", value: profile.likes.map { String($0) } ?? "No disponible")
+                        LabeledContent("Rango BR", value: profile.rankBR ?? "No disponible")
+                        LabeledContent("Rango DE", value: profile.rankDE ?? "No disponible")
+                        LabeledContent("Clan", value: profile.clan ?? "No disponible")
+                    }
+                    Section("Colección") {
+                        Text("Accesorios e imágenes pendientes de disponibilidad en la API autorizada.")
+                    }
+                }
+            }
+            .navigationTitle("Home")
+        }
+    }
+
+    @MainActor private func lookup() async {
+        profile = nil
+        message = ""
+        let id = uid.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !id.isEmpty, id.count <= 20, id.utf8.allSatisfy({ $0 >= 48 && $0 <= 57 }) else {
+            message = "Introduce un UID numérico válido."
+            return
+        }
+        if demo {
+            profile = Profile(nickname: "Jugador de ejemplo", level: 50, likes: 120, rankBR: "Oro", rankDE: "Plata", clan: "Clan de ejemplo")
+            message = "Datos ficticios; no pertenecen al UID introducido."
+            return
+        }
+        message = "Consulta real pendiente de autorización y conexión de la API de Garena."
     }
 }
