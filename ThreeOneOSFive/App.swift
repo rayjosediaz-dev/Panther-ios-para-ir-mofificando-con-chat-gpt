@@ -1179,7 +1179,7 @@ private struct PantherAssignedPatchesView: View {
             PatchProjectsView(ghostTheme: true)
                 .tabItem { Label("Patches", systemImage: "shippingbox") }
             PantherPublicProfileView()
-                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tabItem { Label("Estado de cuenta", systemImage: "person.crop.circle") }
         }
         .preferredColorScheme(.dark)
         .background(Color.black.ignoresSafeArea())
@@ -1231,7 +1231,7 @@ private struct PantherPublicProfileView: View {
                     }
                 }
             }
-            .navigationTitle("Home")
+            .navigationTitle("Estado de cuenta")
         }
     }
 
