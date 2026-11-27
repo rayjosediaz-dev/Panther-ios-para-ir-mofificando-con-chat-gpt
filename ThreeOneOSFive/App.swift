@@ -1203,7 +1203,7 @@ private struct PantherPublicProfileView: View {
             VStack(spacing: 14) {
                 HStack {
                     Image(systemName: "shield.lefthalf.filled").font(.largeTitle).foregroundStyle(red)
-                    Text("Panther").foregroundStyle(.white) + Text(" iOS").foregroundStyle(red)
+                    Text("Panther").foregroundColor(.white) + Text(" iOS").foregroundColor(red)
                 }.font(.system(size: 32, weight: .black, design: .rounded)).italic()
                 heading("Estado de cuenta", "person.crop.circle")
                 HStack {
