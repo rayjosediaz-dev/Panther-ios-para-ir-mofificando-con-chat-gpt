@@ -1190,64 +1190,135 @@ private struct PantherAssignedPatchesView: View {
 private struct PantherPublicProfileView: View {
     @State private var uid = ""
     @State private var demo = false
+    @State private var shown = false
     @State private var message = ""
-    @State private var profile: Profile?
-    @State private var loading = false
-
-    private struct Profile: Decodable {
-        let nickname: String
-        let level: Int?
-        let likes: Int?
-        let rankBR: String?
-        let rankDE: String?
-        let clan: String?
-    }
+    @FocusState private var focused: Bool
+    private let gold = Color(red: 1, green: 0.73, blue: 0.12)
+    private let red = Color(red: 0.92, green: 0.08, blue: 0.12)
+    private var sample: Bool { demo && shown }
+    private func value(_ text: String) -> String { sample ? text : "—" }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Perfil Free Fire") {
-                    TextField("UID del jugador", text: $uid)
-                        .keyboardType(.numberPad)
-                    Toggle("Modo de demostración", isOn: $demo)
-                        .onChange(of: demo) { _ in profile = nil; message = "" }
-                    Button(loading ? "Consultando…" : "Buscar perfil") {
-                        Task { await lookup() }
-                    }
-                    .disabled(loading)
-                    if !message.isEmpty { Text(message).foregroundStyle(.secondary) }
+        ScrollView {
+            VStack(spacing: 14) {
+                HStack {
+                    Image(systemName: "shield.lefthalf.filled").font(.largeTitle).foregroundStyle(red)
+                    Text("Panther").foregroundStyle(.white) + Text(" iOS").foregroundStyle(red)
+                }.font(.system(size: 32, weight: .black, design: .rounded)).italic()
+                heading("Estado de cuenta", "person.crop.circle")
+                HStack {
+                    Image(systemName: "magnifyingglass").foregroundStyle(gold)
+                    TextField("Ingresa el UID de Free Fire", text: $uid)
+                        .keyboardType(.numberPad).focused($focused)
+                    Button { lookup() } label: {
+                        Image(systemName: "magnifyingglass").font(.title2.bold())
+                            .padding(12).background(red, in: RoundedRectangle(cornerRadius: 8))
+                    }.buttonStyle(.plain).accessibilityLabel("Buscar perfil")
+                }.padding(10).modifier(ProfilePanel(tint: red))
+                Toggle("Modo de demostración", isOn: $demo)
+                    .tint(red).onChange(of: demo) { _ in shown = false; message = "" }
+                if !message.isEmpty {
+                    Text(message).font(.caption).foregroundStyle(gold)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                if let profile {
-                    Section(demo ? "Ejemplo ficticio" : "Perfil público") {
-                        LabeledContent("Nombre", value: profile.nickname)
-                        LabeledContent("Nivel", value: profile.level.map { String($0) } ?? "No disponible")
-                        LabeledContent("Likes", value: profile.likes.map { String($0) } ?? "No disponible")
-                        LabeledContent("Rango BR", value: profile.rankBR ?? "No disponible")
-                        LabeledContent("Rango DE", value: profile.rankDE ?? "No disponible")
-                        LabeledContent("Clan", value: profile.clan ?? "No disponible")
+                HStack(spacing: 12) {
+                    Image(systemName: "person.crop.square.fill")
+                        .resizable().scaledToFit().frame(width: 86, height: 100)
+                        .foregroundStyle(gold).padding(6).modifier(ProfilePanel(tint: gold))
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("FREE FIRE").font(.headline.bold()).italic()
+                        Text(value("ShadowX")).font(.title2.bold())
+                        Text("UID: " + value("1234567890")).font(.caption.monospaced())
+                        HStack {
+                            Text("Nv. " + value("58")).font(.headline).foregroundStyle(.black)
+                                .padding(5).background(gold)
+                            Spacer()
+                            Label(value("56,780"), systemImage: "hand.thumbsup.fill").foregroundStyle(gold)
+                        }
                     }
-                    Section("Colección") {
-                        Text("Accesorios e imágenes pendientes de disponibilidad en la API autorizada.")
-                    }
+                }.padding(12).modifier(ProfilePanel(tint: gold))
+                HStack(spacing: 10) {
+                    rank("Battle Royale (BR)", "Gran Maestro", "4125", red)
+                    rank("Duelo de Escuadras (DE)", "Maestro Élite", "3480", gold)
                 }
-            }
-            .navigationTitle("Estado de cuenta")
+                HStack(spacing: 10) {
+                    metric("Clan", value("PANTHER"), "shield.fill")
+                    metric("Región", value("LATAM"), "globe")
+                }
+                Text("ID del clan: " + value("987654321")).font(.caption).foregroundStyle(.secondary)
+                heading("Colección", "tshirt.fill")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(["Ropa", "Cabello", "Máscara", "Accesorios", "Mascota"], id: \.self) { item in
+                            VStack(spacing: 8) {
+                                Image(systemName: "photo").font(.title2).foregroundStyle(gold)
+                                Text(item).font(.caption)
+                            }.frame(width: 78, height: 82).modifier(ProfilePanel(tint: gold))
+                        }
+                    }.padding(2)
+                }
+                Text("Imágenes de colección pendientes de la API autorizada.").font(.caption).foregroundStyle(.secondary)
+                heading("Estadísticas", "chart.bar.fill")
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    metric("Partidas", value("8,420"), "gamecontroller.fill")
+                    metric("Victorias", value("4,980"), "trophy.fill")
+                    metric("K/D", value("3.27"), "chart.line.uptrend.xyaxis")
+                    metric("Likes", value("56,780"), "hand.thumbsup.fill")
+                }
+                Text("FREE FIRE").font(.system(size: 32, weight: .black)).italic()
+                    .padding(.vertical, 12)
+            }.padding(16)
         }
+        .background(LinearGradient(colors: [.black, red.opacity(0.19), .black], startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea())
+        .foregroundStyle(.white)
+        .scrollDismissesKeyboard(.interactively)
     }
 
-    @MainActor private func lookup() async {
-        profile = nil
-        message = ""
+    private func heading(_ title: String, _ icon: String) -> some View {
+        HStack {
+            Image(systemName: icon).foregroundStyle(gold)
+            Text(title).font(.headline.bold())
+            Spacer()
+        }.padding(9).background(LinearGradient(colors: [red.opacity(0.8), .clear], startPoint: .leading, endPoint: .trailing))
+    }
+
+    private func rank(_ title: String, _ name: String, _ points: String, _ tint: Color) -> some View {
+        VStack(spacing: 10) {
+            Text(title).font(.caption.bold()).lineLimit(2).multilineTextAlignment(.center)
+            Image(systemName: "shield.fill").font(.system(size: 60, weight: .black))
+                .foregroundStyle(LinearGradient(colors: [gold, tint], startPoint: .top, endPoint: .bottom))
+                .overlay(Image(systemName: "star.fill").font(.title).foregroundStyle(.white))
+            Text(value(name)).font(.headline).minimumScaleFactor(0.65).lineLimit(1)
+            Label(value(points), systemImage: "star.fill").foregroundStyle(gold)
+        }.padding(12).frame(maxWidth: .infinity).modifier(ProfilePanel(tint: tint))
+    }
+
+    private func metric(_ title: String, _ amount: String, _ icon: String) -> some View {
+        VStack(spacing: 7) {
+            Image(systemName: icon).font(.title2).foregroundStyle(gold)
+            Text(title).font(.caption)
+            Text(amount).font(.title3.bold()).foregroundStyle(gold).lineLimit(1).minimumScaleFactor(0.6)
+        }.padding(12).frame(maxWidth: .infinity).modifier(ProfilePanel(tint: gold))
+    }
+
+    private func lookup() {
+        focused = false
+        shown = false
         let id = uid.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !id.isEmpty, id.count <= 20, id.utf8.allSatisfy({ $0 >= 48 && $0 <= 57 }) else {
             message = "Introduce un UID numérico válido."
             return
         }
-        if demo {
-            profile = Profile(nickname: "Jugador de ejemplo", level: 50, likes: 120, rankBR: "Oro", rankDE: "Plata", clan: "Clan de ejemplo")
-            message = "Datos ficticios; no pertenecen al UID introducido."
-            return
-        }
-        message = "Consulta real pendiente de autorización y conexión de la API de Garena."
+        shown = demo
+        message = demo ? "DEMOSTRACIÓN · Datos ficticios, no corresponden al UID." : "Consulta real pendiente de autorización de Garena."
+    }
+}
+
+private struct ProfilePanel: ViewModifier {
+    let tint: Color
+    func body(content: Content) -> some View {
+        content.background(LinearGradient(colors: [tint.opacity(0.15), .black], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(tint, lineWidth: 1.4))
+            .shadow(color: tint.opacity(0.28), radius: 5)
     }
 }
